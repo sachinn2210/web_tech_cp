@@ -1,0 +1,110 @@
+from rest_framework import serializers
+from django.contrib.auth.models import User
+from .models import Category, Tag, Question, Answer, UserProfile
+
+class UserSerializer(serializers.ModelSerializer):
+    reputation = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'reputation']
+    
+    def get_reputation(self, obj):
+        return obj.userprofile.reputation if hasattr(obj, 'userprofile') else 0
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['id', 'name', 'created_at']
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ['id', 'name']
+
+class AnswerSerializer(serializers.ModelSerializer):
+    author = UserSerializer(read_only=True)
+    vote_score = serializers.SerializerMethodField()
+    time_since = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Answer
+        fields = ['id', 'content', 'author', 'is_best', 'vote_score', 'time_since', 'created_at', 'updated_at']
+        read_only_fields = ['is_best', 'created_at', 'updated_at']
+    
+    def get_vote_score(self, obj):
+        return obj.vote_score()
+    
+    def get_time_since(self, obj):
+        return obj.time_since()
+
+class QuestionListSerializer(serializers.ModelSerializer):
+    author = UserSerializer(read_only=True)
+    category = CategorySerializer(read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
+    answer_count = serializers.SerializerMethodField()
+    vote_score = serializers.SerializerMethodField()
+    time_since = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Question
+        fields = ['id', 'title', 'content', 'category', 'tags', 'author', 'image', 'vote_score', 'answer_count', 'time_since', 'created_at']
+    
+    def get_answer_count(self, obj):
+        return obj.answers.count()
+    
+    def get_vote_score(self, obj):
+        return obj.vote_score()
+    
+    def get_time_since(self, obj):
+        return obj.time_since()
+
+class QuestionDetailSerializer(serializers.ModelSerializer):
+    author = UserSerializer(read_only=True)
+    category = CategorySerializer(read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
+    answers = AnswerSerializer(many=True, read_only=True)
+    vote_score = serializers.SerializerMethodField()
+    time_since = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Question
+        fields = ['id', 'title', 'content', 'category', 'tags', 'author', 'image', 'vote_score', 'answers', 'time_since', 'created_at', 'updated_at']
+    
+    def get_vote_score(self, obj):
+        return obj.vote_score()
+    
+    def get_time_since(self, obj):
+        return obj.time_since()
+
+class QuestionCreateSerializer(serializers.ModelSerializer):
+    tags = serializers.ListField(child=serializers.CharField(), required=False)
+    
+    class Meta:
+        model = Question
+        fields = ['title', 'content', 'category', 'tags', 'image']
+    
+    def create(self, validated_data):
+        tags_data = validated_data.pop('tags', [])
+        question = Question.objects.create(**validated_data)
+        for tag_name in tags_data:
+            tag, _ = Tag.objects.get_or_create(name=tag_name.strip())
+            question.tags.add(tag)
+        return question
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    email = serializers.CharField(source='user.email', read_only=True)
+    date_joined = serializers.DateTimeField(source='user.date_joined', read_only=True)
+    question_count = serializers.SerializerMethodField()
+    answer_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = UserProfile
+        fields = ['username', 'email', 'reputation', 'bio', 'date_joined', 'question_count', 'answer_count']
+    
+    def get_question_count(self, obj):
+        return Question.objects.filter(author=obj.user).count()
+    
+    def get_answer_count(self, obj):
+        return Answer.objects.filter(author=obj.user).count()
