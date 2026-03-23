@@ -29,7 +29,7 @@ class AnswerSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Answer
-        fields = ['id', 'content', 'author', 'is_best', 'vote_score', 'time_since', 'created_at', 'updated_at']
+        fields = ['id', 'question', 'content', 'author', 'is_best', 'vote_score', 'time_since', 'created_at', 'updated_at']
         read_only_fields = ['is_best', 'created_at', 'updated_at']
     
     def get_vote_score(self, obj):
@@ -78,7 +78,7 @@ class QuestionDetailSerializer(serializers.ModelSerializer):
         return obj.time_since()
 
 class QuestionCreateSerializer(serializers.ModelSerializer):
-    tags = serializers.ListField(child=serializers.CharField(), required=False)
+    tags = serializers.ListField(child=serializers.CharField(), required=False, write_only=True)
     
     class Meta:
         model = Question
@@ -91,6 +91,9 @@ class QuestionCreateSerializer(serializers.ModelSerializer):
             tag, _ = Tag.objects.get_or_create(name=tag_name.strip())
             question.tags.add(tag)
         return question
+    
+    def to_representation(self, instance):
+        return QuestionListSerializer(instance, context=self.context).data
 
 class UserProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
