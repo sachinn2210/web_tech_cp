@@ -26,6 +26,7 @@ urlpatterns = [
     path('qa/', include('qa.urls')),
     path('achievements/', include('achievements.urls')),
     path('accounts/', include('django.contrib.auth.urls')),
+    path('api/', include('api_urls')),
 ]
 
 if settings.DEBUG:
