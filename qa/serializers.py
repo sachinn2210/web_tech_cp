@@ -4,13 +4,42 @@ from .models import Category, Tag, Question, Answer, UserProfile
 
 class UserSerializer(serializers.ModelSerializer):
     reputation = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'reputation']
-    
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'reputation']
+
     def get_reputation(self, obj):
         return obj.userprofile.reputation if hasattr(obj, 'userprofile') else 0
+
+
+class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, min_length=8)
+    password_confirm = serializers.CharField(write_only=True, min_length=8)
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password', 'password_confirm']
+
+    def validate(self, data):
+        if data['password'] != data['password_confirm']:
+            raise serializers.ValidationError("Passwords do not match")
+        if User.objects.filter(username=data['username']).exists():
+            raise serializers.ValidationError("Username already taken")
+        if User.objects.filter(email=data['email']).exists():
+            raise serializers.ValidationError("Email already registered")
+        return data
+
+    def create(self, validated_data):
+        validated_data.pop('password_confirm')
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data.get('email', ''),
+            password=validated_data['password']
+        )
+        # Create user profile
+        UserProfile.objects.create(user=user)
+        return user
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
