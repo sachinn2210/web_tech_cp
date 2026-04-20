@@ -25,7 +25,8 @@ urlpatterns = [
     path('', lambda request: redirect('question_list')),
     path('qa/', include('qa.urls')),
     path('achievements/', include('achievements.urls')),
-    path('accounts/', include('django.contrib.auth.urls')),
+    #path('accounts/', include('django.contrib.auth.urls')),
+    path('accounts/', include('qa.auth_urls')),
     path('api/', include('api_urls')),
 ]
 
