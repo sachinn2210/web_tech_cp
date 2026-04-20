@@ -23,9 +23,9 @@
 .claude/
 
 __pycache__/
-achievements/
+
 myvenv/
-qa/
+
 
 
 # misc
@@ -47,3 +47,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Django
+db.sqlite3
+media/
