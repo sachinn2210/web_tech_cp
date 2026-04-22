@@ -26,6 +26,8 @@ __pycache__/
 achievements/
 myvenv/
 qa/
+qa/__pycache__/
+
 
 
 # misc

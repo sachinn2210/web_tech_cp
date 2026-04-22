@@ -6,6 +6,8 @@ from django.contrib import messages
 from django.db.models import Q, Count
 from django.core.paginator import Paginator
 from .models import Question, Answer, Category, Tag, UserProfile
+from django.contrib.auth import logout
+from django.views.decorators.http import require_POST
 
 def question_list(request):
     questions = Question.objects.annotate(answer_count=Count('answers'))
@@ -255,9 +257,15 @@ def register(request):
             return redirect('register')
         
         user = User.objects.create_user(username=username, email=email, password=password)
-        UserProfile.objects.create(user=user)
+        UserProfile.objects.get_or_create(user=user)
         login(request, user)
         messages.success(request, "Registration successful!")
         return redirect('question_list')
     
     return render(request, 'registration/register.html')
+
+@login_required
+def logout_view(request):
+    logout(request)
+    messages.success(request, "Logged out successfully.")
+    return redirect('login')

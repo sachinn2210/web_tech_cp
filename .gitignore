@@ -47,7 +47,29 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pycache
 
 # Django
 db.sqlite3
 media/
+<<<<<<< HEAD
+=======
+
+# Environment
+.env
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+>>>>>>> d605c50b2921c04bbdcae0c7485fe94d298af193
