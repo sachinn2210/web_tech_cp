@@ -1,16 +1,16 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import Navbar from '../../components/Navbar';
-import { questionAPI, answerAPI } from '../../lib/api';
-import { useAuth } from '../../context/AuthContext';
+import Navbar from '../../../components/Navbar';
+import { questionAPI, answerAPI } from '../../../lib/api';
+import { useAuth } from '../../../context/AuthContext';
 import Link from 'next/link';
 
 interface User { username: string; }
 interface Tag { id: number; name: string; }
 interface Category { id: number; name: string; }
-interface Answer { id: number; content: string; author: User; created_at: string; vote_score: number; is_best: boolean; time_since: string; }
-interface Question { id: number; title: string; content: string; author: User; created_at: string; vote_score: number; category: Category; tags: Tag[]; time_since: string; image?: string; }
+interface Answer { id: number; content: string; author: User; created_at: string; vote_score: number; upvote_count: number; downvote_count: number; is_best: boolean; time_since: string; }
+interface Question { id: number; title: string; content: string; author: User; created_at: string; vote_score: number; upvote_count: number; downvote_count: number; category: Category; tags: Tag[]; time_since: string; image?: string; }
 
 export default function QuestionDetailPage() {
   const params = useParams();
@@ -28,7 +28,7 @@ export default function QuestionDetailPage() {
   const [editContent, setEditContent] = useState('');
 
   const fetchQuestion = async () => { try { const { data } = await questionAPI.get(id); setQuestion(data); setEditTitle(data.title); setEditContent(data.content); } catch { setError('Failed to load question'); } };
-  const fetchAnswers = async () => { try { const { data } = await answerAPI.list(id); setAnswers(data); } catch {} finally { setLoading(false); } };
+  const fetchAnswers = async () => { try { const { data } = await answerAPI.list(id); setAnswers(Array.isArray(data) ? data : data.results || []); } catch {} finally { setLoading(false); } };
 
   useEffect(() => { Promise.all([fetchQuestion(), fetchAnswers()]); }, [id]);
 
@@ -51,9 +51,16 @@ export default function QuestionDetailPage() {
     } catch {}
   };
 
-  const handleVoteAnswer = async (answerId: number) => {
+  const handleVoteAnswer = async (answerId: number, direction: 'up' | 'down') => {
     if (!user) return;
-    try { await answerAPI.upvote(answerId); fetchAnswers(); } catch {}
+    try { 
+      if (direction === 'up') {
+        await answerAPI.upvote(answerId);
+      } else {
+        await answerAPI.downvote(answerId);
+      }
+      fetchAnswers(); 
+    } catch {}
   };
 
   const handleMarkBest = async (answerId: number) => {
@@ -102,16 +109,19 @@ export default function QuestionDetailPage() {
             <div className="bg-white rounded-xl border-2 border-gray-200 p-6 mb-6">
               <div className="flex gap-5">
                 {/* Vote column */}
-                <div className="flex flex-col items-center gap-1 shrink-0">
+                <div className="flex flex-col items-center gap-2 shrink-0">
                   <button onClick={() => handleVoteQuestion('up')} disabled={!user} className="p-2 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-40 group">
                     <svg className="w-6 h-6 text-gray-400 group-hover:text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" /></svg>
                   </button>
-                  <span className={`font-black text-lg tabular-nums ${question.vote_score > 0 ? 'text-green-600' : question.vote_score < 0 ? 'text-red-600' : 'text-gray-600'}`}>
-                    {question.vote_score}
+                  <span className="font-black text-base text-green-600">
+                    {question.upvote_count || 0}
                   </span>
                   <button onClick={() => handleVoteQuestion('down')} disabled={!user} className="p-2 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-40 group">
                     <svg className="w-6 h-6 text-gray-400 group-hover:text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
                   </button>
+                  <span className="font-black text-base text-red-600">
+                    {question.downvote_count || 0}
+                  </span>
                 </div>
 
                 {/* Content */}
@@ -213,11 +223,15 @@ export default function QuestionDetailPage() {
                       </div>
                     )}
                     <div className="flex gap-4">
-                      <div className="flex flex-col items-center gap-1 shrink-0">
-                        <button onClick={() => handleVoteAnswer(answer.id)} disabled={!user} className="p-1.5 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-40 group">
+                      <div className="flex flex-col items-center gap-2 shrink-0">
+                        <button onClick={() => handleVoteAnswer(answer.id, 'up')} disabled={!user} className="p-1.5 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-40 group">
                           <svg className="w-5 h-5 text-gray-400 group-hover:text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" /></svg>
                         </button>
-                        <span className={`text-sm font-black tabular-nums ${answer.vote_score > 0 ? 'text-green-600' : 'text-gray-500'}`}>{answer.vote_score}</span>
+                        <span className="text-sm font-black text-green-600">{answer.upvote_count || 0}</span>
+                        <button onClick={() => handleVoteAnswer(answer.id, 'down')} disabled={!user} className="p-1.5 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-40 group">
+                          <svg className="w-5 h-5 text-gray-400 group-hover:text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
+                        </button>
+                        <span className="text-sm font-black text-red-600">{answer.downvote_count || 0}</span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-gray-800 text-sm leading-relaxed whitespace-pre-wrap mb-4">{answer.content}</p>

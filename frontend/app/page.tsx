@@ -16,6 +16,8 @@ interface Question {
   created_at: string;
   updated_at: string;
   vote_score: number;
+  upvote_count: number;
+  downvote_count: number;
   answer_count: number;
   category: {
     id: number;

@@ -10,6 +10,8 @@ interface Question {
   created_at: string;
   updated_at: string;
   vote_score: number;
+  upvote_count: number;
+  downvote_count: number;
   answer_count: number;
   category: Category;
   tags: Tag[];
@@ -37,11 +39,8 @@ export default function QuestionCard({ question, onVote }: QuestionCardProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
             </svg>
           </button>
-          <span className={`text-base font-black tabular-nums ${
-            question.vote_score > 0 ? 'text-green-600' :
-            question.vote_score < 0 ? 'text-red-600' : 'text-gray-500'
-          }`}>
-            {question.vote_score}
+          <span className="text-sm font-black text-green-600">
+            {question.upvote_count || 0}
           </span>
           <button
             onClick={() => onVote?.(question.id, 'down')}
@@ -52,6 +51,9 @@ export default function QuestionCard({ question, onVote }: QuestionCardProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
+          <span className="text-sm font-black text-red-600">
+            {question.downvote_count || 0}
+          </span>
         </div>
 
         {/* Content */}

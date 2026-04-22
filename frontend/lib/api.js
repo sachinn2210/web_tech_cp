@@ -81,6 +81,7 @@ export const answerAPI = {
   listByAuthor: (username) => api.get(`/answers/?author=${username}`),
   create: (data) => api.post('/answers/', data),
   upvote: (id) => api.post(`/answers/${id}/upvote/`),
+  downvote: (id) => api.post(`/answers/${id}/downvote/`),
   markBest: (id) => api.post(`/answers/${id}/mark_best/`),
 };
 
