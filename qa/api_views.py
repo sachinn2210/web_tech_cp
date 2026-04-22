@@ -85,7 +85,16 @@ class AnswerViewSet(viewsets.ModelViewSet):
     queryset = Answer.objects.all()
     serializer_class = AnswerSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
-    
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        question_id = self.request.query_params.get('question')
+        author = self.request.query_params.get('author')
+        if question_id:
+            queryset = queryset.filter(question_id=question_id)
+        if author:
+            queryset = queryset.filter(author__username=author)
+        return queryset
     def perform_create(self, serializer):
         answer = serializer.save(author=self.request.user)
         profile, _ = UserProfile.objects.get_or_create(user=self.request.user)
@@ -135,6 +144,11 @@ class UserProfileViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
     lookup_field = 'user__username'
+    lookup_url_kwarg = 'user__username'
+
+    def get_object(self):
+        username = self.kwargs.get('user__username') or self.kwargs.get('pk')
+        return UserProfile.objects.get(user__username=username)
     
     @action(detail=False, methods=['get', 'put'], permission_classes=[IsAuthenticated])
     def me(self, request):
