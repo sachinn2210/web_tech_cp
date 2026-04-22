@@ -17,7 +17,10 @@ export default function Filters({ onFilterChange }: FilterProps) {
   const [sortBy, setSortBy] = useState('newest');
 
   useEffect(() => {
-    categoryAPI.list().then(({ data }) => setCategories(data));
+    categoryAPI.list().then(({ data }) => {
+      // Handle paginated response (data.results) or direct array
+      setCategories(Array.isArray(data) ? data : (data.results || []));
+    });
   }, []);
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {

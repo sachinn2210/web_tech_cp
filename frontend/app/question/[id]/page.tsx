@@ -1,9 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import Navbar from '../../../../components/Navbar';
-import { questionAPI, answerAPI } from '../../../../lib/api';
-import { useAuth } from '../../../../context/AuthContext';
+import Navbar from '@/components/Navbar';
+import { questionAPI, answerAPI } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 
 interface User {
   username: string;

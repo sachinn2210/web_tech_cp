@@ -1,9 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Navbar from '../../../components/Navbar';
-import { questionAPI, categoryAPI } from '../../../lib/api';
-import { useAuth } from '../../../context/AuthContext';
+import Navbar from '@/components/Navbar';
+import { questionAPI, categoryAPI } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 
 interface Category {
   id: number;
@@ -12,7 +12,9 @@ interface Category {
 
 export default function AskQuestionPage() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const auth = useAuth();
+  const user = auth?.user;
+  const authLoading = auth?.loading ?? true;
   const [categories, setCategories] = useState<Category[]>([]);
   const [formData, setFormData] = useState({
     title: '',

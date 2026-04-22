@@ -1,8 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import Navbar from '../../../../components/Navbar';
-import { profileAPI, questionAPI, answerAPI } from '../../../../lib/api';
+import Navbar from '@/components/Navbar';
+import { profileAPI, questionAPI, answerAPI } from '@/lib/api';
 import Link from 'next/link';
 
 interface UserProfile {

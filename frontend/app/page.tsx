@@ -1,10 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
-import Navbar from '../../components/Navbar';
-import QuestionCard from '../../components/QuestionCard';
-import Filters from '../../components/Filters';
-import { questionAPI } from '../../lib/api';
-import { useAuth } from '../../context/AuthContext';
+import Navbar from '@/components/Navbar';
+import QuestionCard from '@/components/QuestionCard';
+import Filters from '@/components/Filters';
+import { questionAPI } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 
 interface Question {
@@ -48,7 +48,8 @@ export default function HomePage() {
       else params.sort = 'newest';
 
       const { data } = await questionAPI.list(params);
-      setQuestions(data);
+      // Handle paginated response (data.results) or direct array
+      setQuestions(Array.isArray(data) ? data : (data.results || []));
       setError('');
     } catch {
       setError('Failed to load questions');
