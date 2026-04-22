@@ -25,8 +25,7 @@ SECRET_KEY = 'django-insecure-=&8qu73@zqk1#z6jm%6u9yz^2cqs2hd&k(=wmi)a7z+32#&x1f
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
 # Application definition
 
@@ -37,11 +36,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
     'qa',
     'achievements',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -162,6 +161,12 @@ SIMPLE_JWT = {
 }
 
 # CORS settings
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-]
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:5173",
+# ]
+
+CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "http://localhost:3001"]
+CORS_ALLOW_CREDENTIALS = True
+
+
+# CORS_ALLOW_ALL_ORIGINS = True

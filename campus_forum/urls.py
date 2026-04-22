@@ -19,12 +19,16 @@ from django.urls import path, include
 from django.shortcuts import redirect
 from django.conf import settings
 from django.conf.urls.static import static
+# In urls.py — catch-all for React routes
+from django.views.generic import TemplateView
+
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', lambda request: redirect('question_list')),
-    path('qa/', include('qa.urls')),
-    path('achievements/', include('achievements.urls')),
+    # path('qa/', include('qa.urls')),
+    # path('achievements/', include('achievements.urls')),
     #path('accounts/', include('django.contrib.auth.urls')),
     path('accounts/', include('qa.auth_urls')),
     path('api/', include('api_urls')),

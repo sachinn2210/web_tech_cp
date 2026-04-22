@@ -44,6 +44,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+campus_forum/__pycache__/
+
+frontend/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
@@ -57,8 +61,6 @@ __pycache__/
 # Django
 db.sqlite3
 media/
-<<<<<<< HEAD
-=======
 
 # Environment
 .env
@@ -72,4 +74,5 @@ env/
 # OS
 .DS_Store
 Thumbs.db
->>>>>>> d605c50b2921c04bbdcae0c7485fe94d298af193
+
+campus_forum/__pycache__/
