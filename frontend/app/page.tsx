@@ -42,6 +42,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filters, setFilters] = useState<Filters>({ category: undefined, tag: undefined, sort: undefined });
+  const [initialLoad, setInitialLoad] = useState(true);
   const { user } = useAuth();
 
   const fetchQuestions = async () => {
@@ -50,9 +51,7 @@ export default function HomePage() {
       const params: Record<string, string | number> = {};
       if (filters.category) params.category = filters.category;
       if (filters.tag) params.tag = filters.tag;
-      if (filters.sort === 'answers') params.sort = 'answers';
-      else if (filters.sort === 'votes') params.sort = 'votes';
-      else params.sort = 'newest';
+      if (filters.sort) params.sort = filters.sort;
       
       const searchQuery = searchParams.get('search');
       if (searchQuery) params.search = searchQuery;
@@ -64,6 +63,7 @@ export default function HomePage() {
       setError('Failed to load questions');
     } finally {
       setLoading(false);
+      setInitialLoad(false);
     }
   };
 
@@ -77,7 +77,12 @@ export default function HomePage() {
       const endpoint = direction === 'up' ? 'upvote' : 'downvote';
       const { data } = await questionAPI[endpoint](id);
       setQuestions(questions.map(q =>
-        q.id === id ? { ...q, vote_score: data.vote_score } : q
+        q.id === id ? {
+          ...q,
+          vote_score: data.vote_score,
+          upvote_count: data.upvote_count,
+          downvote_count: data.downvote_count
+        } : q
       ));
     } catch {
       // Handle vote error silently
@@ -114,7 +119,7 @@ export default function HomePage() {
         <Filters onFilterChange={handleFilterChange} />
 
         {/* Questions List */}
-        {loading ? (
+        {initialLoad && loading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
           </div>
@@ -140,6 +145,11 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="space-y-4">
+            {loading && (
+              <div className="flex justify-center py-2">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+              </div>
+            )}
             {questions.map((question) => (
               <QuestionCard
                 key={question.id}

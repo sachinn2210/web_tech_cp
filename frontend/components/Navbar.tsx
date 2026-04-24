@@ -1,17 +1,86 @@
 'use client';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import api from '../lib/api';
+
+interface Suggestion {
+  id: number;
+  title: string;
+}
 
 export default function Navbar() {
   const auth = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   const user = auth?.user;
   const loading = auth?.loading;
+
+  // Sync search input with URL on mount
+  useEffect(() => {
+    const urlSearch = searchParams.get('search');
+    if (urlSearch) setSearchQuery(urlSearch);
+  }, [searchParams]);
+
+  // Debounced instant search + suggestions
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    const trimmed = searchQuery.trim();
+
+    // Update URL for instant refresh (debounced)
+    debounceRef.current = setTimeout(() => {
+      const currentSearch = searchParams.get('search') || '';
+      if (trimmed !== currentSearch) {
+        if (trimmed) {
+          router.push(`/?search=${encodeURIComponent(trimmed)}`);
+        } else {
+          router.push('/');
+        }
+      }
+    }, 300);
+
+    // Fetch suggestions
+    if (trimmed.length >= 2) {
+      api.get('/questions/', { params: { search: trimmed } })
+        .then(({ data }) => {
+          const results = data.results ?? data;
+          setSuggestions(results.slice(0, 5).map((q: any) => ({ id: q.id, title: q.title })));
+          setShowSuggestions(true);
+          setHighlightedIndex(-1);
+        })
+        .catch(() => {
+          setSuggestions([]);
+        });
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchQuery, router, searchParams]);
+
+  // Click outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleLogout = () => {
     auth?.logout();
@@ -21,8 +90,33 @@ export default function Navbar() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    setShowSuggestions(false);
     if (searchQuery.trim()) {
-      router.push(`/?search=${encodeURIComponent(searchQuery)}`);
+      router.push(`/?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const handleSuggestionClick = (id: number) => {
+    setShowSuggestions(false);
+    router.push(`/question/${id}`);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || suggestions.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex((prev) => (prev + 1) % suggestions.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex((prev) => (prev - 1 + suggestions.length) % suggestions.length);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (highlightedIndex >= 0) {
+        handleSuggestionClick(suggestions[highlightedIndex].id);
+      }
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
     }
   };
 
@@ -56,20 +150,51 @@ export default function Navbar() {
           </div>
 
           {/* Search */}
-          <form onSubmit={handleSearch} className="flex-1 max-w-lg mx-4 hidden sm:flex items-center">
-            <div className="relative w-full">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search questions..."
-                className="w-full pl-10 pr-4 py-2 bg-gray-100 border-2 border-transparent rounded-lg text-sm font-medium text-gray-900 placeholder-gray-500 focus:outline-none focus:bg-white focus:border-gray-900 transition-all"
-              />
-            </div>
-          </form>
+          <div ref={searchContainerRef} className="flex-1 max-w-lg mx-4 hidden sm:flex items-center relative">
+            <form onSubmit={handleSearch} className="w-full">
+              <div className="relative w-full">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onFocus={() => {
+                    if (suggestions.length > 0) setShowSuggestions(true);
+                  }}
+                  placeholder="Search questions..."
+                  className="w-full pl-10 pr-4 py-2 bg-gray-100 border-2 border-transparent rounded-lg text-sm font-medium text-gray-900 placeholder-gray-500 focus:outline-none focus:bg-white focus:border-gray-900 transition-all"
+                  autoComplete="off"
+                />
+              </div>
+            </form>
+
+            {/* Suggestions dropdown */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border-2 border-gray-900 overflow-hidden z-50">
+                {suggestions.map((s, i) => (
+                  <button
+                    key={s.id}
+                    onClick={() => handleSuggestionClick(s.id)}
+                    onMouseEnter={() => setHighlightedIndex(i)}
+                    className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-3 ${
+                      i === highlightedIndex ? 'bg-gray-900 text-white' : 'text-gray-800 hover:bg-gray-100'
+                    }`}
+                  >
+                    <svg className={`w-4 h-4 shrink-0 ${i === highlightedIndex ? 'text-white' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <span className="truncate">{s.title}</span>
+                  </button>
+                ))}
+                <div className={`px-4 py-2 text-xs border-t border-gray-100 ${highlightedIndex === suggestions.length ? 'bg-gray-900 text-white' : 'text-gray-400 bg-gray-50'}`}>
+                  Press Enter to search all results
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Right side */}
           <div className="flex items-center gap-3">
@@ -147,3 +272,4 @@ export default function Navbar() {
     </nav>
   );
 }
+

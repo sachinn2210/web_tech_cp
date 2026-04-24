@@ -47,19 +47,29 @@ export default function QuestionDetailPage() {
     if (!user || !question) return;
     try {
       const { data } = await questionAPI[direction === 'up' ? 'upvote' : 'downvote'](parseInt(id));
-      setQuestion({ ...question, vote_score: data.vote_score });
+      setQuestion({
+        ...question,
+        vote_score: data.vote_score,
+        upvote_count: data.upvote_count,
+        downvote_count: data.downvote_count
+      });
     } catch {}
   };
 
   const handleVoteAnswer = async (answerId: number, direction: 'up' | 'down') => {
     if (!user) return;
-    try { 
-      if (direction === 'up') {
-        await answerAPI.upvote(answerId);
-      } else {
-        await answerAPI.downvote(answerId);
-      }
-      fetchAnswers(); 
+    try {
+      const { data } = direction === 'up'
+        ? await answerAPI.upvote(answerId)
+        : await answerAPI.downvote(answerId);
+      setAnswers(answers.map(a =>
+        a.id === answerId ? {
+          ...a,
+          vote_score: data.vote_score,
+          upvote_count: data.upvote_count,
+          downvote_count: data.downvote_count
+        } : a
+      ));
     } catch {}
   };
 
