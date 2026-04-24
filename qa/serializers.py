@@ -52,15 +52,23 @@ class TagSerializer(serializers.ModelSerializer):
 class AnswerSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     vote_score = serializers.SerializerMethodField()
+    upvote_count = serializers.SerializerMethodField()
+    downvote_count = serializers.SerializerMethodField()
     time_since = serializers.SerializerMethodField()
     
     class Meta:
         model = Answer
-        fields = ['id', 'question', 'content', 'author', 'is_best', 'vote_score', 'time_since', 'created_at', 'updated_at']
+        fields = ['id', 'question', 'content', 'author', 'is_best', 'vote_score', 'upvote_count', 'downvote_count', 'time_since', 'created_at', 'updated_at']
         read_only_fields = ['is_best', 'created_at', 'updated_at']
     
     def get_vote_score(self, obj):
         return obj.vote_score()
+    
+    def get_upvote_count(self, obj):
+        return obj.upvotes.count()
+    
+    def get_downvote_count(self, obj):
+        return obj.downvotes.count()
     
     def get_time_since(self, obj):
         return obj.time_since()
@@ -71,17 +79,25 @@ class QuestionListSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     answer_count = serializers.SerializerMethodField()
     vote_score = serializers.SerializerMethodField()
+    upvote_count = serializers.SerializerMethodField()
+    downvote_count = serializers.SerializerMethodField()
     time_since = serializers.SerializerMethodField()
     
     class Meta:
         model = Question
-        fields = ['id', 'title', 'content', 'category', 'tags', 'author', 'image', 'vote_score', 'answer_count', 'time_since', 'created_at']
+        fields = ['id', 'title', 'content', 'category', 'tags', 'author', 'image', 'vote_score', 'upvote_count', 'downvote_count', 'answer_count', 'time_since', 'created_at']
     
     def get_answer_count(self, obj):
         return obj.answers.count()
     
     def get_vote_score(self, obj):
         return obj.vote_score()
+    
+    def get_upvote_count(self, obj):
+        return obj.upvotes.count()
+    
+    def get_downvote_count(self, obj):
+        return obj.downvotes.count()
     
     def get_time_since(self, obj):
         return obj.time_since()
@@ -92,14 +108,22 @@ class QuestionDetailSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     answers = AnswerSerializer(many=True, read_only=True)
     vote_score = serializers.SerializerMethodField()
+    upvote_count = serializers.SerializerMethodField()
+    downvote_count = serializers.SerializerMethodField()
     time_since = serializers.SerializerMethodField()
     
     class Meta:
         model = Question
-        fields = ['id', 'title', 'content', 'category', 'tags', 'author', 'image', 'vote_score', 'answers', 'time_since', 'created_at', 'updated_at']
+        fields = ['id', 'title', 'content', 'category', 'tags', 'author', 'image', 'vote_score', 'upvote_count', 'downvote_count', 'answers', 'time_since', 'created_at', 'updated_at']
     
     def get_vote_score(self, obj):
         return obj.vote_score()
+    
+    def get_upvote_count(self, obj):
+        return obj.upvotes.count()
+    
+    def get_downvote_count(self, obj):
+        return obj.downvotes.count()
     
     def get_time_since(self, obj):
         return obj.time_since()
